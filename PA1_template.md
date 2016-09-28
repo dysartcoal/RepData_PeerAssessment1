@@ -52,12 +52,12 @@ For this part of the assignment the missing values were ignored.  When plotting 
 ```r
 library(ggplot2)
 # Total number of steps taken each day
-tot_steps_day <- aggregate(act$steps, list(Date = act$date), sum)
+tot_steps_day <- aggregate(act$steps, list(Date = act$date), sum, na.rm=TRUE)
 range(tot_steps_day$x, na.rm=TRUE)
 ```
 
 ```
-## [1]    41 21194
+## [1]     0 21194
 ```
 
 ```r
@@ -73,11 +73,11 @@ median_steps <- median(tot_steps_day$x, na.rm=TRUE)
 ### Mean and Median Number of Steps Taken Each Day
 
 ```
-## [1] "Mean total steps per day:  10766.19"
+## [1] "Mean total steps per day:  9354.23"
 ```
 
 ```
-## [1] "Median total steps per day:  10765"
+## [1] "Median total steps per day:  10395"
 ```
 
 ## What is the average daily activity pattern?
@@ -121,9 +121,10 @@ The strategy adopted to impute values for the 2304 NAs in the dataset was to use
 
 
 ```r
-merge <- merge(act, msi, by="interval", suffix = c(".act", ".mean") )
+library("dplyr")
+merge <- left_join(act, msi, by="interval", suffix = c(".act", ".mean") )
 missing_idx = which(is.na(act$steps))
-act[missing_idx, "steps"] = merge[missing_idx, "steps.mean"]
+act[missing_idx, "steps"] <- merge[missing_idx, "steps.mean"]
 rm(merge)
 
 # Repeat the calculations from previously
@@ -140,11 +141,11 @@ nmedian_steps <- median(ntot_steps_day$x)
 
 
 ```
-## [1] "New mean total steps per day:  10889.8 compare to original value of:   10766.19"
+## [1] "New mean total steps per day:  10766.19 compare to original value of:   9354.23"
 ```
 
 ```
-## [1] "New median total steps per day:  11015 compare to original value of:   10765"
+## [1] "New median total steps per day:  10766.19 compare to original value of:   10395"
 ```
 So it can be seen that imputing the missing values using the average value for the interval causes both the mean and the median values to increase.
 
@@ -153,7 +154,6 @@ So it can be seen that imputing the missing values using the average value for t
 A factor variable "daytype" was created that has the value "weekend" for Saturdays and Sundays and "weekday" otherwise.  The time series was plotted as averages per interval for weekdays and weekend days.
 
 ```r
-library("dplyr")
 act$daytype <- factor(ifelse(weekdays(act$date) %in% c("Saturday", "Sunday"), "weekend", "weekday"))
 act_grp <- group_by(act, interval, daytype)
 ggplot(act_grp, aes(interval, steps)) + 
